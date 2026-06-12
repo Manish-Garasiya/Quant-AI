@@ -1,5 +1,6 @@
 import yfinance as yf
 
-def load_data(symbol):
-    data= yf.download(symbol,period='1y')
-    return data
+def load_data(symbol,period,interval):
+    equity = yf.Ticker(symbol).history(period=period, interval=interval)
+    equity = equity.dropna()
+    return equity

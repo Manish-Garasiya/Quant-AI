@@ -1,31 +1,48 @@
 from src.data_loader import load_data
-import pandas as pd
+from src.Indicators import MACD,calculate_DIs_and_ADX
+from src.Strategy import signal
+from src.execution import execute
+from src.Performance import performance
 import matplotlib.pyplot as plt
 
-# -- Loading the stock data and saving it to a csv file --
-symbol = str(input("Enter ticker symbol for the stock : "))
-# data = load_data(symbol)
-csv_name = f'{symbol}_data.csv'
-# data.to_csv(csv_name)
+def main():
+    print("Loading the data....")
+    data = load_data("INFY.NS","1y","1d")
 
-# -- Reading the csv file and preparing the data for plotting --
-df = pd.read_csv(csv_name)
-df = df.iloc[1:]
-df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
-df['Price'] = pd.to_datetime(df['Price'])
-# ------ Plotting the stock price curve ------
+    print("Calculating the Indicators ...")
+    data['macd'] = MACD(data['Close'])
+    data['signal_line'] = data['macd'].ewm(span=9, adjust=False).mean()
+    data['di_plus'],data['di_minus'],data['adx'] = calculate_DIs_and_ADX(data['High'],data['Low'],data['Close'])
+    data['ema_100'] = data['Close'].ewm(span=100, adjust=False).mean()
+    print("Applying Strategy logic ....")
+    data = signal(data)
 
-# plt.plot(df['Price'], df['Close'],color='blue')
-# plt.title("Stock price curve")
-# plt.ylabel('Closing price')
-# plt.xlabel('Date')
-# plt.grid(True)
+    print("Executing the trade .....")
+    data = execute(data)
 
-df['Returns'] = df['Close'].pct_change()
-df['MA20'] = df['Close'].rolling(window=20).mean()
-df['MA50'] = df['Close'].rolling(window=50).mean()
+    print("Calculating Results ....\n")
+    results = performance(data)
+    results = results.T
+    print(results)
 
-plt.plot(df['Price'], df['Close'], color='blue')
-plt.plot(df['Price'], df['MA20'], color='red')
-plt.plot(df['Price'], df['MA50'], color='green')
-plt.show()
+    print("Plotting the curves/graphs....")
+
+    #P and L graph
+    data[['delta']].plot(figsize = (10,6))
+    plt.title("P & L Graphs")
+    plt.xlabel("Date")
+    plt.ylabel("Profit or loss(in ₹)")
+    plt.grid(True)
+    plt.show()
+
+    #plotting drawdown graph
+    data[['drawdown']].plot(figsize = (10,6))
+    plt.title("Drawdown graph")
+    plt.xlabel('Date')
+    plt.ylabel('Drawdown')
+    plt.grid(True)
+    plt.show()
+
+if __name__ == "__main__":
+    main()
+
