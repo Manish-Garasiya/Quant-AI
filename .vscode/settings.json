@@ -1,0 +1,35 @@
+{
+    "files.exclude": {
+        "**/__pycache__/**": true,
+        "**/**/*.pyc": true
+    },
+    "python.formatting.provider": "black",
+    "python.terminal.executeInFileDir": false,
+    "database-client.variableIndicator": [
+        ":",
+        "$"
+    ],
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "database": "quant_ai",
+            "username": "postgres",
+            "name": "mydb"
+        },
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "askForPassword": true,
+            "driver": "CockroachDB",
+            "name": "quant_ai",
+            "database": "quant_ai",
+            "username": "postgres"
+        }
+    ]
+}
