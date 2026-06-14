@@ -2,7 +2,7 @@ def signal(data):
     data = data.copy()
     data["signal"] = 0
 
-    trend_strength = data["adx"] > 25
+    trend_strength = data["adx"] > 24
     trend_filter = data["Close"] > data["ema_100"]
 
     bullish = (

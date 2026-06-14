@@ -56,4 +56,4 @@ def train_model(feature_df):
         index=X_test.index
     )
 
-    return model, prediction_df,X_test
+    return model, prediction_df

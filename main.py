@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from features.feature_engineering import FeatureEngineer
 from ml.train_model import train_model
 from database.db import SessionLocal
-from database.repositories import save_features,save_predictions
+from database.repositories import save_features,save_predictions,save_stock,save_strategy_run,save_trades
 import pandas as pd
 # from database.models import Prediction, StrategyRun, TradeModel, Stock, Feature
 
@@ -28,16 +28,9 @@ def main():
     print("Applying strategy logic....")
     data = signal(data)
 
-    print("Running backtest engine....")
-    engine = BacktestEngine(
-        data=data,
-        ticker=ticker,
-        initial_cash=100000,
-        transaction_cost_bps=10,
-        signal_col="signal"
-    )
 
-    bt_df, portfolio = engine.run()
+    session = SessionLocal()
+    save_stock(session,ticker)
 
     feature_df = (
     FeatureEngineer(data)
@@ -50,28 +43,21 @@ def main():
     )
     # print(feature_df.head())
 
-    session = SessionLocal()
     save_features(session, feature_df, ticker)
 
-    model, prediction_df,X_test = train_model(feature_df)
+    model, prediction_df = train_model(feature_df)
 
     save_predictions(session,prediction_df,ticker)
-    
-    preds = model.predict(X_test)
-    probs = model.predict_proba(X_test)[:,1]
+    print("Running backtest engine....")
+    engine = BacktestEngine(data=data,ticker=ticker,initial_cash=100000,transaction_cost_bps=10,signal_col="signal")
 
-    prediction_df = pd.DataFrame({
-
-        "date": X_test.index,
-
-        "probability_up": probs,
-
-        "prediction": preds
-    })
-
+    bt_df, portfolio = engine.run()
     
     print("Calculating results....\n")
     results = performance(bt_df, portfolio)
+
+    save_trades(session,portfolio.closed_trades)
+    save_strategy_run(session,"TrendFollowing",ticker,results)
     print(results.T)
 
     print("Plotting graphs....")
@@ -86,6 +72,7 @@ def main():
         plt.ylabel("Drawdown")
         plt.grid(True)
         plt.show()
+    session.close()
 
 
 if __name__ == "__main__":
